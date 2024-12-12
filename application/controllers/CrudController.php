@@ -1,99 +1,86 @@
 <?php
 defined('BASEPATH') OR exit('No direct script allowed');
-class CrudController extends CI_Controller {
-    
-    public function __construct() {
-        parent::__construct();
-        $this->load->model('crudmodel');
-        $this->form_validation->set_error_delimiters('<div class="text-danger mt-2 mb-3">', '</div>');
-    }
-
-    public function index() {
-        $this->load->view('insert');
-    }
-
-    public function add_data() {
-        $this->form_validation->set_rules('name', 'Name', 'required|trim');
-        $this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email');
-        $this->form_validation->set_rules('phone', 'Phone', 'required|trim|min_length[10]|max_length[10]');
-        $this->form_validation->set_rules('language', 'Language', 'required|trim');
-        $this->form_validation->set_rules('gender', 'Gender', 'required|trim');
-        $this->form_validation->set_rules('qualification', 'Qualification', 'required|trim');
-        if(empty($_FILES['image']['name'])){
-            $this->form_validation->set_rules('image', 'Image', 'required|trim');
-        }
-        if($this->form_validation->run()){
-            $post=$this->input->post();
-            $config['upload_path']='./uploads/';
-            $config['allowed_types']='jpg|png';
-            $this->load->library('upload', $config);
-            if(!$this->upload->do_upload('image')){
-                $error=array('error'=>$this->upload->display_errors());
-                $this->load->view('insert', $error);
-            }
-            else {
-                $data=$this->upload->data();
-                $post=$this->input->post();
-                $post['image']=$data['file_name'];
-                $this->load->model('crudmodel');
-                $check=$this->crudmodel->add_data($post);
-                if($check){
-                    redirect('crudcontroller/all_data');
-                }
-                else {
-
-                }
-            }
-        }
-        else {
-            $this->load->view('insert');
-        }
-    }
-
-    public function all_data($id='') {
-        if($id!='') {
-            $data['arr']=$this->crudmodel->all_data($id);
-            $this->load->view('insert', $data);
-        }
-        else {
-            $data['arr']=$this->crudmodel->all_data();
-            $this->load->view('all-data', $data);
-        }
-    }
-
-    public function update_data() {
-        $this->form_validation->set_rules('name', 'Name', 'required|trim');
-        $this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email');
-        $this->form_validation->set_rules('phone', 'Phone', 'required|trim|min_length[10]|max_length[10]');
-        $this->form_validation->set_rules('language', 'Language', 'required|trim');
-        $this->form_validation->set_rules('gender', 'Gender', 'required|trim');
-        $this->form_validation->set_rules('qualification', 'Qualification', 'required|trim');
-        if($this->form_validation->run()){
-            $post=$this->input->post();
-            $config['upload_path']='./uploads/';
-            $config['allowed_types']='jpg|png';
-            $this->load->library('upload', $config);
-            $this->upload->do_upload('image');
-            $data=$this->upload->data();
-            $post=$this->input->post();
-            $post['image']=$data['file_name'];
-            $check=$this->crudmodel->update_data($post);
-            if($check){
-                redirect('crudcontroller/all_data');
-            }
-        }
-        else {
-            $id=$this->input->post('id');
-            $data['arr']=$this->crudmodel->all_data($id);
-            $this->load->view('insert', $data);
-        }
-    }
-
-    public function delete_data($id) {
-        $check=$this->crudmodel->delete_data($id);
-        if($check) {
-            redirect('crudcontroller/all_data');
-        }
-    }
-}
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <!-- jQuery library -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
+    <!-- Latest compiled JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <title>Crud Operation - Read Data</title>
+</head>
+<body>
+    <div class="container">
+        <a href="add-data" class="btn btn-info text-light my-3 d-flex justify-content-center">Add data</a>
+        <h3 class="text-success text-center mb-3">User's Data</h3>
+        <?php if($this->session->flashdata('successMsg')) {?>
+            <div class="alert alert-success alert-dismissible fade show">
+                <?php echo $this->session->flashdata('successMsg'); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php }?>
+        <?php if($this->session->flashdata('updateMsg')) {?>
+            <div class="alert alert-primary alert-dismissible fade show">
+                <?php echo $this->session->flashdata('updateMsg'); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php }?>
+        <?php if($this->session->flashdata('deleteMsg')) {?>
+            <div class="alert alert-danger alert-dismissible fade show">
+                <?php echo $this->session->flashdata('deleteMsg'); ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php }?>
+        <table class="table-bordered d-flex justify-content-center">
+            <?php if(!empty($arr)) {?>
+                <tr class="bg-info text-center">
+                    <th>Sr No</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Language</th>
+                    <th>Gender</th>
+                    <th>Qualification</th>
+                    <th>Image</th>
+                    <th>Added_on</th>
+                    <th>Updated_on</th>
+                    <th>Status</th>
+                    <th colspan="2">Action</th>
+                </tr>
+            <?php
+                foreach($arr as $key=>$value) {
+                    if($value->status=='1'){
+                        $status='<span class="badge bg-success">Active</span>';
+                    }
+                    else {
+                        $status='<span class="badge bg-danger">Deactive</span>';
+                    }
+                    ?>
+                <tr class="bg-secondary text-light text-center">
+                    <td><?=++$key?></td>
+                    <td><?=$value->name?></td>
+                    <td><?=$value->email?></td>
+                    <td><?=$value->phone?></td>
+                    <td><?=$value->language?></td>
+                    <td><?=$value->gender?></td>
+                    <td><?=$value->qualification?></td>
+                    <td><img src="<?=base_url()?>/uploads/<?=$value->image?>" alt="user_image" width="100em"></td>
+                    <td><?=$value->added_on?></td>
+                    <td><?=$value->updated_on?></td>
+                    <td><?=$status?></td>
+                    <td><a href="all-data/<?=$value->id?>" class="btn btn-primary text-light mx-3">Update</a></td>
+                    <td><a href="delete-data/<?=$value->id?>" class="btn btn-danger text-light mx-3">Delete</a></td>
+                </tr>
+                <?php }
+            }
+            else echo "<h1 class='text-center text-danger mt-5'>No record found</h1>"?>
+        </table>
+    </div>
+</body>
+</html>
