@@ -1,0 +1,1 @@
+rewrite htaccess.txt file to .htaccess
